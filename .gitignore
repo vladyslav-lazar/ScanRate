@@ -5,6 +5,7 @@ backend/uploads/
 # Environment files — contain secrets
 backend/.env
 frontend/.env.local
+.env
 
 # Python
 __pycache__/
