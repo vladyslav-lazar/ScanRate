@@ -30,8 +30,6 @@ services:
 
   frontend:
     image: ${DOCKERHUB_USERNAME}/scanrate-frontend:latest
-    environment:
-      VITE_API_URL: https://scanrate.pp.ua/api
     restart: unless-stopped
 
   nginx:
