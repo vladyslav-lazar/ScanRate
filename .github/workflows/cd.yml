@@ -67,10 +67,10 @@ jobs:
             cd /opt/scanrate
 
             # Pull latest images
-            docker compose -f docker-compose.prod.yml pull
+            sudo docker compose -f docker-compose.prod.yml pull
 
             # Restart containers — db is unaffected, only backend/frontend/nginx restart
-            docker compose -f docker-compose.prod.yml up -d --no-deps backend frontend nginx
+            sudo docker compose -f docker-compose.prod.yml up -d --no-deps backend frontend nginx
 
             # Clean up old images to save disk space
-            docker image prune -f
+            sudo docker image prune -f
