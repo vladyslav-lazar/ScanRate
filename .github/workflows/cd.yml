@@ -41,6 +41,8 @@ jobs:
           file:      ./frontend/Dockerfile.prod
           platforms: linux/arm64
           push:      true
+          build-args: |
+            VITE_API_URL=https://scanrate.pp.ua/api
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/scanrate-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/scanrate-frontend:${{ github.sha }}

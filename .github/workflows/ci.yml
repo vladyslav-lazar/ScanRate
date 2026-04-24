@@ -92,6 +92,8 @@ jobs:
           npm ci
 
       - name: Build
+        env:
+          VITE_API_URL: https://scanrate.pp.ua/api
         run: |
           cd frontend
           npm run build
