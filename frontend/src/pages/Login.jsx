@@ -12,7 +12,7 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [error, setError]     = useState(null);
 
-    // Already logged in — redirect home
+    // Already logged in - redirect home
     if (user) {
         navigate("/", { replace: true });
         return null;

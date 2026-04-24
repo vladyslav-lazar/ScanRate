@@ -41,8 +41,6 @@ jobs:
           file:      ./frontend/Dockerfile.prod
           platforms: linux/arm64
           push:      true
-          build-args: |
-            VITE_API_URL=https://scanrate.pp.ua/api
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/scanrate-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/scanrate-frontend:${{ github.sha }}
@@ -69,8 +67,8 @@ jobs:
             # Pull latest images
             sudo docker compose -f docker-compose.prod.yml pull
 
-            # Restart containers — db is unaffected, only backend/frontend/nginx restart
-            sudo docker compose -f docker-compose.prod.yml up -d --no-deps backend frontend nginx
+            # Restart containers
+            sudo docker compose -f docker-compose.prod.yml up -d
 
             # Clean up old images to save disk space
             sudo docker image prune -f

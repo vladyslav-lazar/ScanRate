@@ -34,7 +34,7 @@ export default function AdminLayout() {
                     <p style={s.headerLabel}>Панель адміністратора</p>
                     <h1 style={s.headerTitle}>ScanRate</h1>
                 </div>
-                {/* Grafana link — opens the auth shim which sets cookie then redirects */}
+                {/* Grafana link - opens the auth shim which sets cookie then redirects */}
 				<a href="https://grafana.scanrate.pp.ua" target="_blank" rel="noopener noreferrer" style={s.grafanaBtn}>
 					Моніторинг
 				</a>

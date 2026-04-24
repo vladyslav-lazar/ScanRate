@@ -1,11 +1,8 @@
-# Data — never commit the database, uploads, or postgres data
+# Data
 data/
 backend/uploads/
 
-# Environment files — contain secrets
-backend/.env
-frontend/.env.development
-frontend/.env.production
+# Environment variables
 .env
 
 # Python

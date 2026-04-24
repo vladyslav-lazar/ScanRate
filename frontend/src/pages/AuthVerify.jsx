@@ -23,7 +23,6 @@ export default function AuthVerify() {
                 localStorage.setItem("access_token", data.access_token);
                 localStorage.setItem("is_admin",     String(data.is_admin));
                 await refreshAuth();
-                // Respect ?next= so Grafana redirect works after login
                 const next = searchParams.get("next");
                 navigate(next ?? "/", { replace: true });
             })

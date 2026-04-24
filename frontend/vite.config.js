@@ -4,10 +4,9 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
     plugins: [react()],
     server: {
-        host: "0.0.0.0",   // needed for Docker — exposes to all interfaces
+        host: "0.0.0.0",
         port: 5173,
         proxy: {
-            // In dev, proxy /api requests to the backend container
             "/api": {
                 target:      "http://backend:8000",
                 changeOrigin: true,
@@ -22,7 +21,6 @@ export default defineConfig({
     build: {
         outDir:     "dist",
         sourcemap:  false,
-        // Split vendor chunks for better caching
         rollupOptions: {
             output: {
                 manualChunks: {

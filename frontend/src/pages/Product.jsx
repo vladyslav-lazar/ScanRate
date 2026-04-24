@@ -71,7 +71,7 @@ export default function Product() {
     return (
         <div style={s.wrapper} className="product-fade">
 
-            {/* Header — name above image */}
+            {/* Header - name above image */}
             <div style={s.headerWrap}>
                 <button style={s.backBtn} onClick={() => navigate(-1)}>←</button>
 

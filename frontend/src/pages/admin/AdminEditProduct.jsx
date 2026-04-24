@@ -164,7 +164,7 @@ export default function AdminEditProduct() {
 
             {error && !original && <p style={s.error}>{error}</p>}
 
-            {/* Edit form — only shown after a successful lookup */}
+            {/* Edit form - only shown after a successful lookup */}
             {original && (
                 <>
                     <label style={s.label}>
@@ -224,7 +224,7 @@ export default function AdminEditProduct() {
                         )}
                     </div>
 
-                    {/* URL fallback — hidden when a file is selected */}
+                    {/* URL fallback - hidden when a file is selected */}
                     {!imageFile && (
                         <>
                             <p style={s.orDivider}>...або використати зовнішнє посилання</p>

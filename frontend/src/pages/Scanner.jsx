@@ -125,7 +125,7 @@ export default function Scanner() {
             });
             setRequestSent(true);
         } catch {
-            // still show success — request may have been a duplicate
+            // Still show success - request may have been a duplicate
             setRequestSent(true);
         }
     }

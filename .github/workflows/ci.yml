@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend-tests:
-    name: Backend — tests
+    name: Backend - tests
     runs-on: ubuntu-latest
 
     services:
@@ -53,7 +53,7 @@ jobs:
         run: pytest -v
 
   backend-lint:
-    name: Backend — lint
+    name: Backend - lint
     runs-on: ubuntu-latest
 
     steps:
@@ -73,7 +73,7 @@ jobs:
           ruff check .
 
   frontend-build:
-    name: Frontend — build check
+    name: Frontend - build check
     runs-on: ubuntu-latest
 
     steps:
@@ -92,8 +92,6 @@ jobs:
           npm ci
 
       - name: Build
-        env:
-          VITE_API_URL: https://scanrate.pp.ua/api
         run: |
           cd frontend
           npm run build

@@ -21,7 +21,6 @@ export function AuthProvider({ children }) {
             if (res.ok) {
                 setUser(await res.json());
             } else {
-                // Token is invalid or expired — clear it
                 localStorage.removeItem("access_token");
                 localStorage.removeItem("is_admin");
                 setUser(null);

@@ -230,7 +230,7 @@ export default function AdminAddProduct() {
                 )}
             </div>
 
-            {/* URL fallback — hidden when a file is selected */}
+            {/* URL fallback - hidden when a file is selected */}
             {!imageFile && (
                 <>
                     <p style={s.orDivider}>...або використати зовнішнє посилання</p>
