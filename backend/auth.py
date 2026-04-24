@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from jose import JWTError, jwt
+from jose import jwt
 import secrets
 
 SECRET_KEY = os.getenv("SECRET_KEY", "very-super-mega-long-random-string-")

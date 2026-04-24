@@ -2,10 +2,8 @@ from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, cast, Date
-from jose import JWTError
 import httpx
 import os
 import shutil
@@ -138,7 +136,7 @@ async def request_login(body: LoginRequest, db: Session = Depends(get_db)):
         db.refresh(user)
 
     db.query(AuthToken)\
-      .filter(AuthToken.user_id == user.id, AuthToken.used == False)\
+      .filter(AuthToken.user_id == user.id, not AuthToken.used)\
       .update({"used": True})
     db.commit()
 
@@ -439,7 +437,7 @@ async def upload_product_image(
 @app.get("/admin/stats", response_model=StatsOut)
 def get_stats(db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     total_products   = db.query(Product).count()
-    total_users      = db.query(User).filter(User.is_admin == False).count()
+    total_users      = db.query(User).filter(not User.is_admin).count()
     total_reviews    = db.query(Rating).count()
     reviews_pending  = db.query(Rating).filter(Rating.status == "pending").count()
     reviews_approved = db.query(Rating).filter(Rating.status == "approved").count()
@@ -458,7 +456,7 @@ def get_stats(db: Session = Depends(get_db), user: User = Depends(get_admin_user
             top_list.append(TopProduct(ean=p.ean, name=p.name, average_rating=round(float(avg), 2), total_ratings=count))
     top_list.sort(key=lambda x: x.average_rating, reverse=True)
 
-    users = db.query(User).filter(User.is_admin == False).all()
+    users = db.query(User).filter(not User.is_admin).all()
     user_activity = []
     for u in users:
         count = db.query(Rating).filter(Rating.user_id == u.id, Rating.status == "approved").count()
@@ -467,7 +465,7 @@ def get_stats(db: Session = Depends(get_db), user: User = Depends(get_admin_user
     user_activity.sort(key=lambda x: x.review_count, reverse=True)
 
     reg_rows = db.query(cast(User.created_at, Date).label("date"), func.count(User.id).label("count"))\
-                 .filter(User.is_admin == False)\
+                 .filter(not User.is_admin)\
                  .group_by(cast(User.created_at, Date))\
                  .order_by(cast(User.created_at, Date)).all()
 

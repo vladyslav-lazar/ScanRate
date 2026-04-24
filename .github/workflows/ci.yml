@@ -50,7 +50,7 @@ jobs:
           FRONTEND_URL:    http://localhost:5173
         run: |
           cd backend
-          pytest tests/ -v
+          pytest -v
 
   backend-lint:
     name: Backend — lint
