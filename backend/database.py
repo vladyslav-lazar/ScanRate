@@ -5,22 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-POSTGRES_USER = os.getenv(
-    "POSTGRES_USER",
-    "admin"
+DATABASE_URL = os.getenv(
+    "DATABASE_URL".
+    "postgresql://admin:admin@localhost:5432/scanrate"
 )
-
-POSTGRES_PASSWORD = os.getenv(
-    "POSTGRES_PASSWORD",
-    "admin"
-)
-
-POSTGRES_DB = os.getenv(
-    "POSTGRES_DB",
-    "scanrate"
-)
-
-DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db:5432/{POSTGRES_DB}"
 
 engine = create_engine(
     DATABASE_URL,

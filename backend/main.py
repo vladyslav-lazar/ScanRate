@@ -36,11 +36,8 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 ALLOWED_ORIGINS = list({FRONTEND_URL, "http://localhost:5173"})
 
 Base.metadata.create_all(bind=engine)
-os.makedirs("uploads", exist_ok=True)
 
 app = FastAPI()
-
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
