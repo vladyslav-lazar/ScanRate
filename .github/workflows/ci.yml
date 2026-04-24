@@ -43,14 +43,14 @@ jobs:
           pip install pytest pytest-asyncio httpx
 
       - name: Run tests
+        working-directory: backend
         env:
-          DATABASE_URL:    postgresql://test:test@localhost:5432/scanrate_test
-          SECRET_KEY:      ci-test-secret-key
-          RESEND_API_KEY:  test
-          FRONTEND_URL:    http://localhost:5173
-        run: |
-          cd backend
-          pytest -v
+          PYTHONPATH: .
+          DATABASE_URL: postgresql://test:test@localhost:5432/scanrate_test
+          SECRET_KEY: ci-test-secret-key
+          RESEND_API_KEY: test
+          FRONTEND_URL: http://localhost:5173
+        run: pytest -v
 
   backend-lint:
     name: Backend — lint
