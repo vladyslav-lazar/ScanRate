@@ -25,3 +25,7 @@ frontend/dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# IDE project files
+frontend/.idea/
+backend/.idea/
