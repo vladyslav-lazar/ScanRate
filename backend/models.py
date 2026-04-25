@@ -10,7 +10,7 @@ class User(Base):
     id         = Column(Integer, primary_key=True, autoincrement=True)
     email      = Column(String, unique=True, nullable=False, index=True)
     is_admin   = Column(Boolean, default=False)
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     ratings    = relationship("Rating", back_populates="user")
 
@@ -21,7 +21,7 @@ class AuthToken(Base):
     id         = Column(Integer, primary_key=True, autoincrement=True)
     user_id    = Column(Integer, ForeignKey("users.id"), nullable=False)
     token      = Column(String, unique=True, nullable=False, index=True)
-    expires_at = Column(DateTime, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
     used       = Column(Boolean, default=False)
 
     user = relationship("User")
@@ -52,7 +52,7 @@ class Rating(Base):
     score      = Column(Integer, nullable=False)
     comment    = Column(String, nullable=True)
     status     = Column(String, default="pending")  # pending | approved | rejected
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     product = relationship("Product", back_populates="ratings")
     user    = relationship("User", back_populates="ratings")
@@ -76,4 +76,4 @@ class ProductRequest(Base):
     image_url   = Column(String, nullable=True)
     description = Column(String, nullable=True)
     status      = Column(String, default="pending")  # pending | approved | rejected
-    created_at  = Column(DateTime, server_default=func.now())
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())
