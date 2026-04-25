@@ -53,7 +53,10 @@ app.add_middleware(
 # Auth helpers
 # -------------------------
 
-def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)) -> User:
+def get_current_user(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db),
+) -> User:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
     token = authorization.split(" ", 1)[1]
@@ -275,6 +278,7 @@ def get_my_review(
 async def request_product(
     ean:  str,
     db:   Session = Depends(get_db),
+    user: User    = Depends(get_current_user),
 ):
     existing = db.query(ProductRequest)\
                  .filter(ProductRequest.ean == ean, ProductRequest.status == "pending").first()
@@ -312,12 +316,12 @@ def get_top_products(limit: int = 10, db: Session = Depends(get_db)):
 # -------------------------
 
 @app.get("/admin/reviews", response_model=list[RatingAdminOut])
-def get_reviews(status: str = "pending", db: Session = Depends(get_db)):
+def get_reviews(status: str = "pending", db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     return db.query(Rating).filter(Rating.status == status).order_by(Rating.created_at.desc()).all()
 
 
 @app.post("/admin/reviews/{review_id}/approve")
-def approve_review(review_id: int, db: Session = Depends(get_db)):
+def approve_review(review_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     r = db.query(Rating).filter(Rating.id == review_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Відгук не було знайдено.")
@@ -327,7 +331,7 @@ def approve_review(review_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/admin/reviews/{review_id}/reject")
-def reject_review(review_id: int, db: Session = Depends(get_db)):
+def reject_review(review_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     r = db.query(Rating).filter(Rating.id == review_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Відгук не було знайдено.")
@@ -341,14 +345,14 @@ def reject_review(review_id: int, db: Session = Depends(get_db)):
 # -------------------------
 
 @app.get("/admin/requests", response_model=list[ProductRequestOut])
-def get_requests(status: str = "pending", db: Session = Depends(get_db)):
+def get_requests(status: str = "pending", db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     return db.query(ProductRequest)\
              .filter(ProductRequest.status == status)\
              .order_by(ProductRequest.created_at.desc()).all()
 
 
 @app.post("/admin/requests/{request_id}/approve")
-def approve_request(request_id: int, db: Session = Depends(get_db)):
+def approve_request(request_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     req = db.query(ProductRequest).filter(ProductRequest.id == request_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="Запит не було знайдено.")
@@ -367,7 +371,7 @@ def approve_request(request_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/admin/requests/{request_id}/reject")
-def reject_request(request_id: int, db: Session = Depends(get_db)):
+def reject_request(request_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     req = db.query(ProductRequest).filter(ProductRequest.id == request_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="Запит не було знайдено.")
@@ -381,7 +385,7 @@ def reject_request(request_id: int, db: Session = Depends(get_db)):
 # -------------------------
 
 @app.post("/admin/products", response_model=ProductSummary)
-def admin_add_product(body: ManualProductCreate, db: Session = Depends(get_db)):
+def admin_add_product(body: ManualProductCreate, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     existing = db.query(Product).filter(Product.ean == body.ean).first()
     if existing:
         raise HTTPException(status_code=409, detail="Продукт вже існує.")
@@ -397,7 +401,7 @@ def admin_add_product(body: ManualProductCreate, db: Session = Depends(get_db)):
 # -------------------------
 
 @app.put("/admin/products/{ean}", response_model=ProductSummary)
-def admin_edit_product(ean: str, body: ManualProductEdit, db: Session = Depends(get_db)):
+def admin_edit_product(ean: str, body: ManualProductEdit, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     product = db.query(Product).filter(Product.ean == ean).first()
     if not product:
         raise HTTPException(status_code=404, detail="Продукт не було знайдено.")
@@ -419,6 +423,7 @@ async def upload_product_image(
     ean:  str,
     file: UploadFile = File(...),
     db:   Session    = Depends(get_db),
+    user: User       = Depends(get_admin_user),
 ):
     product = db.query(Product).filter(Product.ean == ean).first()
     if not product:
@@ -451,7 +456,7 @@ async def upload_product_image(
 # -------------------------
 
 @app.get("/admin/stats", response_model=StatsOut)
-def get_stats(db: Session = Depends(get_db)):
+def get_stats(db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
     total_products   = db.query(Product).count()
     total_users      = db.query(User).filter(~User.is_admin).count()
     total_reviews    = db.query(Rating).count()
