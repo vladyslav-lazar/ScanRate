@@ -378,7 +378,7 @@ const s = {
     tabBar:      { display: "flex", borderBottom: "1px solid #1a1a1a", margin: "0 20px" },
     tabBtn:      { flex: 1, background: "none", border: "none", borderBottom: "2px solid transparent", padding: "12px 0", fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: "0.04em", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
     tabActive:   { color: "#00ff88", borderBottomColor: "#00ff88" },
-    tabInactive: { color: "rgba(255,255,255,0.3)" },
+    tabInactive: { color: "rgba(255,255,255,0.3)", borderBottomColor: "rgba(255,255,255,0.1)" },
     tabBadge:    { background: "#1a1a1a", color: "rgba(255,255,255,0.4)", fontSize: 10, padding: "1px 6px", borderRadius: 10 },
 
     tabContent:   { padding: "20px" },
