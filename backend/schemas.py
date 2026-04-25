@@ -17,9 +17,7 @@ class UserOut(BaseModel):
     id:       int
     email:    str
     is_admin: bool
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # -------------------------
@@ -35,9 +33,7 @@ class RatingOut(BaseModel):
     score:      int
     comment:    str | None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class RatingAdminOut(BaseModel):
     id:           int
@@ -47,9 +43,7 @@ class RatingAdminOut(BaseModel):
     created_at:   datetime
     product_ean:  str
     product_name: str | None
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # -------------------------
@@ -65,9 +59,7 @@ class ProductSummary(BaseModel):
     description:    str | None
     average_rating: float | None
     total_ratings:  int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ProductOut(ProductSummary):
     ratings: list[RatingOut]
@@ -89,9 +81,7 @@ class ProductRequestOut(BaseModel):
     description: str | None
     status:      str
     created_at:  datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ManualProductCreate(BaseModel):
     ean:         str = Field(..., min_length=13, max_length=13)
@@ -150,6 +140,4 @@ class RatingOutWithStatus(RatingOut):
     """Extended rating info returned to the owner so they can see their review status."""
     status:  str
     user_id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
