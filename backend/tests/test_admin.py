@@ -1,4 +1,3 @@
-from unittest.mock import patch, AsyncMock
 from conftest import auth_header
 
 
@@ -7,7 +6,7 @@ from conftest import auth_header
 # -------------------------
 
 def test_get_pending_reviews(client, admin_token, product, approved_rating, db):
-    from models import Rating, User
+    from models import Rating
     # Change rating to pending for this test
     db.query(Rating).filter(Rating.id == approved_rating.id).update({"status": "pending"})
     db.commit()

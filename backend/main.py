@@ -1,8 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from sqlalchemy import func, cast, Date
+from sqlalchemy import func
 from jose import JWTError
 import httpx
 import os
@@ -53,10 +53,7 @@ app.add_middleware(
 # Auth helpers
 # -------------------------
 
-def get_current_user(
-    authorization: str = Header(None),
-    db: Session = Depends(get_db),
-) -> User:
+def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)) -> User:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
     token = authorization.split(" ", 1)[1]
@@ -72,7 +69,7 @@ def get_current_user(
 
 
 def get_admin_user(user: User = Depends(get_current_user)) -> User:
-    if not user.is_admin:
+    if ~user.is_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
 
@@ -80,6 +77,17 @@ def get_admin_user(user: User = Depends(get_current_user)) -> User:
 # -------------------------
 # Product helpers
 # -------------------------
+
+async def get_product_query(product: Product, db: Session) -> ProductOut:
+    avg = db.query(func.avg(Rating.score)).filter(Rating.product_id == product.id, Rating.status == "approved").scalar()
+    total = db.query(Rating).filter(Rating.product_id == product.id, Rating.status == "approved").count()
+    approved_ratings = db.query(Rating).filter(Rating.product_id == product.id, Rating.status == "approved").all()
+    return ProductOut(
+        id=product.id, ean=product.ean, name=product.name, brand=product.brand,
+        image_url=product.image_url, description=product.description,
+        average_rating=round(avg, 2) if avg else None,
+        total_ratings=total, ratings=approved_ratings,
+    )
 
 async def fetch_product_info(ean: str) -> dict:
     url = f"https://world.openfoodfacts.org/api/v0/product/{ean}.json"
@@ -143,7 +151,7 @@ async def request_login(body: LoginRequest, db: Session = Depends(get_db)):
     auth_token = AuthToken(
         user_id    = user.id,
         token      = token,
-        expires_at = datetime.utcnow() + timedelta(minutes=15),
+        expires_at = datetime.now(UTC) + timedelta(minutes=15),
     )
     db.add(auth_token)
     db.commit()
@@ -160,7 +168,7 @@ def verify_magic_link(token: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Це посилання не є валідним.")
     if auth_token.used:
         raise HTTPException(status_code=400, detail="Це посилання вже було використано.")
-    if auth_token.expires_at < datetime.utcnow():
+    if auth_token.expires_at < datetime.now(UTC):
         raise HTTPException(status_code=400, detail="Термін дії на це посилання закінчився.")
 
     auth_token.used = True
@@ -200,20 +208,7 @@ async def get_product(ean: str, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.ean == ean).first()
     if not product:
         raise HTTPException(status_code=404, detail="Продукт не існує в базі даних сервісу.")
-
-    avg = db.query(func.avg(Rating.score))\
-            .filter(Rating.product_id == product.id, Rating.status == "approved").scalar()
-    total = db.query(Rating)\
-              .filter(Rating.product_id == product.id, Rating.status == "approved").count()
-    approved_ratings = db.query(Rating)\
-                         .filter(Rating.product_id == product.id, Rating.status == "approved").all()
-
-    return ProductOut(
-        id=product.id, ean=product.ean, name=product.name, brand=product.brand,
-        image_url=product.image_url, description=product.description,
-        average_rating=round(avg, 2) if avg else None,
-        total_ratings=total, ratings=approved_ratings,
-    )
+    return await get_product_query(db, product)
 
 
 @app.post("/product/{ean}/rate", response_model=ProductOut)
@@ -236,20 +231,7 @@ async def rate_product(
     db.add(rating)
     db.commit()
     db.refresh(product)
-
-    avg = db.query(func.avg(Rating.score))\
-            .filter(Rating.product_id == product.id, Rating.status == "approved").scalar()
-    total = db.query(Rating)\
-              .filter(Rating.product_id == product.id, Rating.status == "approved").count()
-    approved_ratings = db.query(Rating)\
-                         .filter(Rating.product_id == product.id, Rating.status == "approved").all()
-
-    return ProductOut(
-        id=product.id, ean=product.ean, name=product.name, brand=product.brand,
-        image_url=product.image_url, description=product.description,
-        average_rating=round(avg, 2) if avg else None,
-        total_ratings=total, ratings=approved_ratings,
-    )
+    return await get_product_query(db, product)
 
 
 @app.put("/product/{ean}/rate", response_model=ProductOut)
@@ -273,18 +255,7 @@ async def edit_rating(
     rating.status  = "pending"
     db.commit()
     db.refresh(product)
-
-    avg = db.query(func.avg(Rating.score))            .filter(Rating.product_id == product.id, Rating.status == "approved").scalar()
-    total = db.query(Rating)              .filter(Rating.product_id == product.id, Rating.status == "approved").count()
-    approved_ratings = db.query(Rating)                         .filter(Rating.product_id == product.id, Rating.status == "approved").all()
-
-    return ProductOut(
-        id=product.id, ean=product.ean, name=product.name, brand=product.brand,
-        image_url=product.image_url, description=product.description,
-        average_rating=round(avg, 2) if avg else None,
-        total_ratings=total, ratings=approved_ratings,
-    )
-
+    return await get_product_query(db, product)
 
 @app.get("/product/{ean}/my-review", response_model=RatingOutWithStatus | None)
 def get_my_review(
@@ -304,7 +275,6 @@ def get_my_review(
 async def request_product(
     ean:  str,
     db:   Session = Depends(get_db),
-    user: User    = Depends(get_current_user),
 ):
     existing = db.query(ProductRequest)\
                  .filter(ProductRequest.ean == ean, ProductRequest.status == "pending").first()
@@ -342,12 +312,12 @@ def get_top_products(limit: int = 10, db: Session = Depends(get_db)):
 # -------------------------
 
 @app.get("/admin/reviews", response_model=list[RatingAdminOut])
-def get_reviews(status: str = "pending", db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+def get_reviews(status: str = "pending", db: Session = Depends(get_db)):
     return db.query(Rating).filter(Rating.status == status).order_by(Rating.created_at.desc()).all()
 
 
 @app.post("/admin/reviews/{review_id}/approve")
-def approve_review(review_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+def approve_review(review_id: int, db: Session = Depends(get_db)):
     r = db.query(Rating).filter(Rating.id == review_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Відгук не було знайдено.")
@@ -357,7 +327,7 @@ def approve_review(review_id: int, db: Session = Depends(get_db), user: User = D
 
 
 @app.post("/admin/reviews/{review_id}/reject")
-def reject_review(review_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+def reject_review(review_id: int, db: Session = Depends(get_db)):
     r = db.query(Rating).filter(Rating.id == review_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Відгук не було знайдено.")
@@ -371,14 +341,14 @@ def reject_review(review_id: int, db: Session = Depends(get_db), user: User = De
 # -------------------------
 
 @app.get("/admin/requests", response_model=list[ProductRequestOut])
-def get_requests(status: str = "pending", db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+def get_requests(status: str = "pending", db: Session = Depends(get_db)):
     return db.query(ProductRequest)\
              .filter(ProductRequest.status == status)\
              .order_by(ProductRequest.created_at.desc()).all()
 
 
 @app.post("/admin/requests/{request_id}/approve")
-def approve_request(request_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+def approve_request(request_id: int, db: Session = Depends(get_db)):
     req = db.query(ProductRequest).filter(ProductRequest.id == request_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="Запит не було знайдено.")
@@ -397,7 +367,7 @@ def approve_request(request_id: int, db: Session = Depends(get_db), user: User =
 
 
 @app.post("/admin/requests/{request_id}/reject")
-def reject_request(request_id: int, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+def reject_request(request_id: int, db: Session = Depends(get_db)):
     req = db.query(ProductRequest).filter(ProductRequest.id == request_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="Запит не було знайдено.")
@@ -411,7 +381,7 @@ def reject_request(request_id: int, db: Session = Depends(get_db), user: User = 
 # -------------------------
 
 @app.post("/admin/products", response_model=ProductSummary)
-def admin_add_product(body: ManualProductCreate, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+def admin_add_product(body: ManualProductCreate, db: Session = Depends(get_db)):
     existing = db.query(Product).filter(Product.ean == body.ean).first()
     if existing:
         raise HTTPException(status_code=409, detail="Продукт вже існує.")
@@ -427,7 +397,7 @@ def admin_add_product(body: ManualProductCreate, db: Session = Depends(get_db), 
 # -------------------------
 
 @app.put("/admin/products/{ean}", response_model=ProductSummary)
-def admin_edit_product(ean: str, body: ManualProductEdit, db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+def admin_edit_product(ean: str, body: ManualProductEdit, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.ean == ean).first()
     if not product:
         raise HTTPException(status_code=404, detail="Продукт не було знайдено.")
@@ -449,7 +419,6 @@ async def upload_product_image(
     ean:  str,
     file: UploadFile = File(...),
     db:   Session    = Depends(get_db),
-    user: User       = Depends(get_admin_user),
 ):
     product = db.query(Product).filter(Product.ean == ean).first()
     if not product:
@@ -482,9 +451,9 @@ async def upload_product_image(
 # -------------------------
 
 @app.get("/admin/stats", response_model=StatsOut)
-def get_stats(db: Session = Depends(get_db), user: User = Depends(get_admin_user)):
+def get_stats(db: Session = Depends(get_db)):
     total_products   = db.query(Product).count()
-    total_users      = db.query(User).filter(not User.is_admin).count()
+    total_users      = db.query(User).filter(~User.is_admin).count()
     total_reviews    = db.query(Rating).count()
     reviews_pending  = db.query(Rating).filter(Rating.status == "pending").count()
     reviews_approved = db.query(Rating).filter(Rating.status == "approved").count()
@@ -503,7 +472,7 @@ def get_stats(db: Session = Depends(get_db), user: User = Depends(get_admin_user
             top_list.append(TopProduct(ean=p.ean, name=p.name, average_rating=round(float(avg), 2), total_ratings=count))
     top_list.sort(key=lambda x: x.average_rating, reverse=True)
 
-    users = db.query(User).filter(not User.is_admin).all()
+    users = db.query(User).filter(~User.is_admin).all()
     user_activity = []
     for u in users:
         count = db.query(Rating).filter(Rating.user_id == u.id, Rating.status == "approved").count()
@@ -511,14 +480,22 @@ def get_stats(db: Session = Depends(get_db), user: User = Depends(get_admin_user
             user_activity.append(ActiveUser(email=u.email, review_count=count))
     user_activity.sort(key=lambda x: x.review_count, reverse=True)
 
-    reg_rows = db.query(cast(User.created_at, Date).label("date"), func.count(User.id).label("count"))\
-                 .filter(not User.is_admin)\
-                 .group_by(cast(User.created_at, Date))\
-                 .order_by(cast(User.created_at, Date)).all()
+    reg_rows = db.query(
+        func.date(User.created_at).label("date"),
+        func.count(User.id).label("count")
+    ) \
+        .filter(~User.is_admin) \
+        .group_by(func.date(User.created_at)) \
+        .order_by(func.date(User.created_at)) \
+        .all()
 
-    rev_rows = db.query(cast(Rating.created_at, Date).label("date"), func.count(Rating.id).label("count"))\
-                 .group_by(cast(Rating.created_at, Date))\
-                 .order_by(cast(Rating.created_at, Date)).all()
+    rev_rows = db.query(
+        func.date(Rating.created_at).label("date"),
+        func.count(Rating.id).label("count")
+    ) \
+        .group_by(func.date(Rating.created_at)) \
+        .order_by(func.date(Rating.created_at)) \
+        .all()
 
     return StatsOut(
         total_products=total_products,

@@ -7,6 +7,7 @@ FRONTEND_URL   = os.getenv("FRONTEND_URL", "http://frontend:5173")
 
 def send_magic_link(to_email: str, token: str):
     link = f"{FRONTEND_URL}/auth/verify?token={token}"
+    # noinspection PyTypeChecker
     resend.Emails.send({
         "from":    "noreply@scanrate.pp.ua",
         "to":      to_email,
@@ -16,7 +17,7 @@ def send_magic_link(to_email: str, token: str):
                 <h2 style="margin:0 0 8px;color:#fff;">Вхід в аккаунт ScanRate</h2>
                 <p style="color:#888;margin:0 0 24px;">
                     Нажміть на кнопку знизу для входу у Ваш аккаунт. 
-                    Це посилання буде активне тільки 15 хвидин і є одноразовим.
+                    Це посилання буде активне тільки 15 хвилин і є одноразовим.
                 </p>
                 <a href="{link}"
                    style="display:inline-block;padding:14px 28px;background:#00ff88;
