@@ -13,6 +13,8 @@ from database import Base, engine, get_db
 from models import Product, Rating, ProductRequest, User, AuthToken
 from schemas import (
     RatingCreate,
+    RatingEdit,
+    RatingOutWithStatus,
     ProductOut,
     ProductSummary,
     ProductLookup,
@@ -248,6 +250,54 @@ async def rate_product(
         average_rating=round(avg, 2) if avg else None,
         total_ratings=total, ratings=approved_ratings,
     )
+
+
+@app.put("/product/{ean}/rate", response_model=ProductOut)
+async def edit_rating(
+    ean:  str,
+    body: RatingEdit,
+    db:   Session = Depends(get_db),
+    user: User    = Depends(get_current_user),
+):
+    product = db.query(Product).filter(Product.ean == ean).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Продукт не було знайдено.")
+
+    rating = db.query(Rating)               .filter(Rating.product_id == product.id, Rating.user_id == user.id).first()
+    if not rating:
+        raise HTTPException(status_code=404, detail="Ви ще не оцінили цей продукт.")
+
+    # Reset to pending so admin re-approves the edited review
+    rating.score   = body.score
+    rating.comment = body.comment
+    rating.status  = "pending"
+    db.commit()
+    db.refresh(product)
+
+    avg = db.query(func.avg(Rating.score))            .filter(Rating.product_id == product.id, Rating.status == "approved").scalar()
+    total = db.query(Rating)              .filter(Rating.product_id == product.id, Rating.status == "approved").count()
+    approved_ratings = db.query(Rating)                         .filter(Rating.product_id == product.id, Rating.status == "approved").all()
+
+    return ProductOut(
+        id=product.id, ean=product.ean, name=product.name, brand=product.brand,
+        image_url=product.image_url, description=product.description,
+        average_rating=round(avg, 2) if avg else None,
+        total_ratings=total, ratings=approved_ratings,
+    )
+
+
+@app.get("/product/{ean}/my-review", response_model=RatingOutWithStatus | None)
+def get_my_review(
+    ean:  str,
+    db:   Session = Depends(get_db),
+    user: User    = Depends(get_current_user),
+):
+    """Returns the current user's own review for a product regardless of status."""
+    product = db.query(Product).filter(Product.ean == ean).first()
+    if not product:
+        return None
+    rating = db.query(Rating)               .filter(Rating.product_id == product.id, Rating.user_id == user.id).first()
+    return rating
 
 
 @app.post("/product/{ean}/request", response_model=ProductRequestOut)

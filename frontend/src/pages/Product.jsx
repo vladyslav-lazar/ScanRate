@@ -29,6 +29,8 @@ export default function Product() {
     const [selected, setSelected] = useState(null);
     const [comment, setComment]   = useState("");
     const [rated, setRated]       = useState(false);
+    const [myReview, setMyReview] = useState(null);   // user's own review (any status)
+    const [editing, setEditing]   = useState(false);  // editing mode
 
     useEffect(() => { injectStyles(); }, []);
 
@@ -38,6 +40,23 @@ export default function Product() {
             .then(data => { setProduct(data); setLoading(false); })
             .catch(() => { setError("Помилка завантаження продукту."); setLoading(false); });
     }, [ean]);
+
+    // Fetch the user's own review (if logged in) to show edit option
+    useEffect(() => {
+        if (!user) return;
+        const token = localStorage.getItem("access_token");
+        fetch(`${API_URL}/product/${ean}/my-review`, {
+            headers: { "Authorization": `Bearer ${token}` },
+        })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data) {
+                    setMyReview(data);
+                    setRated(true);
+                }
+            })
+            .catch(() => {});
+    }, [ean, user]);
 
     async function handleRate() {
         if (!selected) return;
@@ -60,6 +79,28 @@ export default function Product() {
             setRated(true);
         } catch {
             setError("Помилка створення відгуку на цей продукт.");
+        }
+    }
+
+    async function handleEdit() {
+        if (!selected) return;
+        const token = localStorage.getItem("access_token");
+        try {
+            const res = await fetch(`${API_URL}/product/${ean}/rate`, {
+                method:  "PUT",
+                headers: {
+                    "Content-Type":  "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify({ score: selected, comment: comment.trim() || null }),
+            });
+            if (!res.ok) throw new Error();
+            const updated = await res.json();
+            setProduct(updated);
+            setMyReview({ ...myReview, score: selected, comment: comment.trim() || null, status: "pending" });
+            setEditing(false);
+        } catch {
+            setError("Помилка оновлення відгуку.");
         }
     }
 
@@ -199,13 +240,94 @@ export default function Product() {
                             </>
                         )}
 
-                        {/* Logged in, rated */}
-                        {user && rated && (
+                        {/* Logged in, rated - show review with edit option */}
+                        {user && rated && !editing && (
                             <div style={s.ratedWrap}>
-                                <p style={s.ratedIcon}>★</p>
-                                <p style={s.ratedTitle}>Дякуємо за Ваш відгук!</p>
-                                <p style={s.ratedSub}>Цей відгук з'явиться після перевірки адміністрацією сервісу.</p>
+                                <div style={s.myReviewCard}>
+                                    <div style={s.myReviewTop}>
+                                        <span style={s.myReviewStars}>
+                                            {"★".repeat(myReview?.score ?? 0)}{"☆".repeat(5 - (myReview?.score ?? 0))}
+                                        </span>
+                                        <span style={{
+                                            ...s.myReviewBadge,
+                                            ...(myReview?.status === "approved" ? s.badgeGreen
+                                              : myReview?.status === "rejected"  ? s.badgeRed
+                                              : s.badgeYellow)
+                                        }}>
+                                            {myReview?.status === "approved" ? "Опубліковано"
+                                           : myReview?.status === "rejected"  ? "Відхилено"
+                                           : "На перевірці"}
+                                        </span>
+                                    </div>
+                                    {myReview?.comment && (
+                                        <p style={s.myReviewComment}>{myReview.comment}</p>
+                                    )}
+                                </div>
+                                <button
+                                    style={s.editBtn}
+                                    onClick={() => {
+                                        setSelected(myReview?.score ?? null);
+                                        setComment(myReview?.comment ?? "");
+                                        setEditing(true);
+                                    }}
+                                >
+                                    Редагувати відгук
+                                </button>
                             </div>
+                        )}
+
+                        {/* Editing existing review */}
+                        {user && rated && editing && (
+                            <>
+                                <p style={s.ratePrompt}>Змініть Вашу оцінку:</p>
+                                <div style={s.starsRow}>
+                                    {[1,2,3,4,5].map(score => (
+                                        <button
+                                            key={score}
+                                            className="star-btn"
+                                            style={{
+                                                ...s.starBtn,
+                                                ...(selected === score
+                                                        ? s.starActive
+                                                        : selected && score < selected
+                                                            ? s.starFilled
+                                                            : {}
+                                                )
+                                            }}
+                                            onClick={() => setSelected(score)}
+                                        >
+                                            ★
+                                        </button>
+                                    ))}
+                                </div>
+                                {selected && (
+                                    <p style={s.selectedLabel}>
+                                        {["","Жахливо","Погано","Добре","Чудово","Відмінно"][selected]}
+                                    </p>
+                                )}
+                                <textarea
+                                    style={s.commentInput}
+                                    placeholder="Напишіть свій відгук (опціонально)"
+                                    value={comment}
+                                    onChange={e => setComment(e.target.value)}
+                                    rows={4}
+                                    maxLength={500}
+                                />
+                                <p style={s.charCount}>{comment.length}/500</p>
+                                {error && <p style={s.errorText}>{error}</p>}
+                                <div style={{ display: "flex", gap: 10 }}>
+                                    <button style={s.cancelEditBtn} onClick={() => setEditing(false)}>
+                                        Скасувати
+                                    </button>
+                                    <button
+                                        style={{ ...s.submitBtn, flex: 2, ...(!selected ? s.submitDis : {}) }}
+                                        onClick={handleEdit}
+                                        disabled={!selected}
+                                    >
+                                        Зберегти
+                                    </button>
+                                </div>
+                            </>
                         )}
                     </div>
                 )}
@@ -289,4 +411,15 @@ const s = {
     reviewStars:   { color: "#f5c518", fontSize: 13, letterSpacing: 2 },
     reviewDate:    { color: "rgba(255,255,255,0.25)", fontSize: 11 },
     reviewComment: { color: "rgba(255,255,255,0.65)", fontSize: 14, margin: 0, lineHeight: 1.5 },
+
+    myReviewCard:    { background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 10, padding: "12px 14px", marginBottom: 14, textAlign: "left" },
+    myReviewTop:     { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
+    myReviewStars:   { color: "#f5c518", fontSize: 14, letterSpacing: 2 },
+    myReviewBadge:   { fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", borderRadius: 20 },
+    myReviewComment: { color: "rgba(255,255,255,0.6)", fontSize: 13, margin: 0, lineHeight: 1.5 },
+    badgeGreen:      { background: "#0a1f14", color: "#00ff88", border: "1px solid #0d3320" },
+    badgeRed:        { background: "#1f0a0a", color: "#ff4444", border: "1px solid #3d1010" },
+    badgeYellow:     { background: "#1f1a00", color: "#f5c518", border: "1px solid #3d3300" },
+    editBtn:         { width: "100%", padding: "12px 0", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 10, color: "rgba(255,255,255,0.6)", fontSize: 14, cursor: "pointer" },
+    cancelEditBtn:   { flex: 1, padding: 14, background: "transparent", border: "1px solid #2a2a2a", borderRadius: 12, color: "rgba(255,255,255,0.5)", fontSize: 14, cursor: "pointer" },
 };

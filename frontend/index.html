@@ -11,6 +11,20 @@
     <meta name="description" content="ScanRate - відскануй та оціни продукт" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>ScanRate</title>
+    <style>
+      /* Prevent the soft keyboard from resizing/shifting fixed-position layout.
+         Each page's wrapper div handles its own scrolling via overflowY: auto. */
+      html {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        height: 100%;
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

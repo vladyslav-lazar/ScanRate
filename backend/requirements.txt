@@ -9,3 +9,7 @@ passlib
 resend
 python-dotenv
 psycopg2-binary
+
+# Testing
+pytest
+pytest-asyncio

@@ -140,3 +140,16 @@ class StatsOut(BaseModel):
     most_active_users:       list[ActiveUser]
     registrations_per_day:   list[DailyActivity]
     reviews_per_day:         list[DailyActivity]
+
+
+class RatingEdit(BaseModel):
+    score:   int = Field(..., ge=1, le=5)
+    comment: str | None = None
+
+class RatingOutWithStatus(RatingOut):
+    """Extended rating info returned to the owner so they can see their review status."""
+    status:  str
+    user_id: int
+
+    class Config:
+        from_attributes = True
