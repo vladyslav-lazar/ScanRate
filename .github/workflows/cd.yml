@@ -1,11 +1,16 @@
 name: CD
 
 on:
-  push:
-    branches: ["main"]
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
 
 jobs:
   build-and-push:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
     name: Build and push Docker images
     runs-on: ubuntu-latest
 
@@ -24,30 +29,30 @@ jobs:
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
-          context:   ./backend
-          file:      ./backend/Dockerfile.prod
+          context: ./backend
+          file: ./backend/Dockerfile.prod
           platforms: linux/arm64
-          push:      true
+          push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/scanrate-backend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/scanrate-backend:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/scanrate-backend:${{ github.event.workflow_run.head_sha }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/scanrate-backend:latest
-          cache-to:   type=inline
+          cache-to: type=inline
 
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
-          context:   ./frontend
-          file:      ./frontend/Dockerfile.prod
+          context: ./frontend
+          file: ./frontend/Dockerfile.prod
           platforms: linux/arm64
-          push:      true
+          push: true
           build-args: |
             VITE_API_URL=https://scanrate.pp.ua/api
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/scanrate-frontend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/scanrate-frontend:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/scanrate-frontend:${{ github.event.workflow_run.head_sha }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/scanrate-frontend:latest
-          cache-to:   type=inline
+          cache-to: type=inline
 
   deploy:
     name: Deploy to Oracle VM
@@ -55,26 +60,20 @@ jobs:
     needs: build-and-push
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
-          host:     ${{ secrets.VPS_HOST }}
+          host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key:      ${{ secrets.VPS_SSH_KEY }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /opt/scanrate
-            
-            # Pull latest GitHub repository changes
-            git fetch
-            git pull
 
-            # Pull latest images
+            # Pull latest images (already built from CI-tested commit)
             sudo docker compose -f docker-compose.prod.yml pull
 
             # Restart containers
             sudo docker compose -f docker-compose.prod.yml up -d
 
-            # Clean up old images to save disk space
+            # Clean up old images
             sudo docker image prune -f
