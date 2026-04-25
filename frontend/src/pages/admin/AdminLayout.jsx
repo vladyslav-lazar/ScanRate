@@ -74,7 +74,7 @@ const s = {
     headerTitle: { color: "#fff", fontSize: 18, fontWeight: 700, margin: 0, letterSpacing: "-0.3px" },
     grafanaBtn:  { padding: "7px 12px", background: "#0a1f14", border: "1px solid #0d3320", borderRadius: 8, color: "#00ff88", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textDecoration: "none", flexShrink: 0 },
     tabBar:      { display: "flex", borderBottom: "1px solid #1a1a1a", flexShrink: 0, padding: "0 20px" },
-    tab:         { flex: 1, background: "none", border: "none", borderBottom: "2px solid transparent", padding: "12px 0", fontSize: 11, fontWeight: 600, cursor: "pointer", letterSpacing: "0.04em", transition: "color 0.15s, border-color 0.15s" },
+    tab:         { color: "rgba(255,255,255,0.3)", flex: 1, background: "none", border: "none", borderBottom: "2px solid transparent", padding: "12px 0", fontSize: 11, fontWeight: 600, cursor: "pointer", letterSpacing: "0.04em", transition: "color 0.15s, border-color 0.15s" },
     tabActive:   { color: "#00ff88", borderBottomColor: "#00ff88" },
     tabInactive: { color: "rgba(255,255,255,0.3)" },
     content:     { flex: 1, overflowY: "auto", padding: "20px" },
