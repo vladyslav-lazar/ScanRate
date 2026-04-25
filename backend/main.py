@@ -208,7 +208,7 @@ async def get_product(ean: str, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.ean == ean).first()
     if not product:
         raise HTTPException(status_code=404, detail="Продукт не існує в базі даних сервісу.")
-    return await get_product_query(db, product)
+    return await get_product_query(product, db)
 
 
 @app.post("/product/{ean}/rate", response_model=ProductOut)
@@ -231,7 +231,7 @@ async def rate_product(
     db.add(rating)
     db.commit()
     db.refresh(product)
-    return await get_product_query(db, product)
+    return await get_product_query(product, db)
 
 
 @app.put("/product/{ean}/rate", response_model=ProductOut)
@@ -255,7 +255,7 @@ async def edit_rating(
     rating.status  = "pending"
     db.commit()
     db.refresh(product)
-    return await get_product_query(db, product)
+    return await get_product_query(product, db)
 
 @app.get("/product/{ean}/my-review", response_model=RatingOutWithStatus | None)
 def get_my_review(
