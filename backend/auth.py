@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta
 from jose import jwt
 import secrets
 
@@ -15,7 +15,7 @@ def create_jwt(user_id: int, is_admin: bool) -> str:
     payload = {
         "sub":      str(user_id),
         "is_admin": is_admin,
-        "exp":      datetime.now(UTC) + timedelta(days=30),
+        "exp":      datetime.utcnow() + timedelta(days=30),
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 

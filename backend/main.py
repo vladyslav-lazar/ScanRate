@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -151,7 +151,7 @@ async def request_login(body: LoginRequest, db: Session = Depends(get_db)):
     auth_token = AuthToken(
         user_id    = user.id,
         token      = token,
-        expires_at = datetime.now(UTC) + timedelta(minutes=15),
+        expires_at = datetime.utcnow() + timedelta(minutes=15),
     )
     db.add(auth_token)
     db.commit()
@@ -168,7 +168,7 @@ def verify_magic_link(token: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Це посилання не є валідним.")
     if auth_token.used:
         raise HTTPException(status_code=400, detail="Це посилання вже було використано.")
-    if auth_token.expires_at < datetime.now(UTC):
+    if auth_token.expires_at < datetime.utcnow():
         raise HTTPException(status_code=400, detail="Термін дії на це посилання закінчився.")
 
     auth_token.used = True

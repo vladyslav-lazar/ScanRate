@@ -27,7 +27,7 @@ def test_verify_invalid_token(client):
 
 
 def test_verify_valid_token(client, db, regular_user):
-    from datetime import datetime, timedelta, UTC
+    from datetime import datetime, timedelta
     from models import AuthToken
     from auth import create_magic_token
 
@@ -35,7 +35,7 @@ def test_verify_valid_token(client, db, regular_user):
     auth_token = AuthToken(
         user_id=regular_user.id,
         token=token,
-        expires_at=datetime.now(UTC) + timedelta(minutes=15),
+        expires_at=datetime.utcnow() + timedelta(minutes=15),
     )
     db.add(auth_token)
     db.commit()
@@ -48,7 +48,7 @@ def test_verify_valid_token(client, db, regular_user):
 
 
 def test_verify_used_token(client, db, regular_user):
-    from datetime import datetime, timedelta, UTC
+    from datetime import datetime, timedelta
     from models import AuthToken
     from auth import create_magic_token
 
@@ -56,7 +56,7 @@ def test_verify_used_token(client, db, regular_user):
     auth_token = AuthToken(
         user_id=regular_user.id,
         token=token,
-        expires_at=datetime.now(UTC) + timedelta(minutes=15),
+        expires_at=datetime.utcnow() + timedelta(minutes=15),
         used=True,
     )
     db.add(auth_token)
@@ -67,7 +67,7 @@ def test_verify_used_token(client, db, regular_user):
 
 
 def test_verify_expired_token(client, db, regular_user):
-    from datetime import datetime, timedelta, UTC
+    from datetime import datetime, timedelta
     from models import AuthToken
     from auth import create_magic_token
 
@@ -75,7 +75,7 @@ def test_verify_expired_token(client, db, regular_user):
     auth_token = AuthToken(
         user_id=regular_user.id,
         token=token,
-        expires_at=datetime.now(UTC) - timedelta(minutes=1),
+        expires_at=datetime.utcnow() - timedelta(minutes=1),
     )
     db.add(auth_token)
     db.commit()
