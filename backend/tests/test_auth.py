@@ -27,7 +27,7 @@ def test_verify_invalid_token(client):
 
 
 def test_verify_valid_token(client, db, regular_user):
-    from datetime import datetime, UTC
+    from datetime import datetime, timedelta, UTC
     from models import AuthToken
     from auth import create_magic_token
 
