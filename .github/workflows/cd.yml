@@ -65,6 +65,10 @@ jobs:
           key:      ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /opt/scanrate
+            
+            # Pull latest GitHub repository changes
+            git fetch
+            git pull
 
             # Pull latest images
             sudo docker compose -f docker-compose.prod.yml pull
