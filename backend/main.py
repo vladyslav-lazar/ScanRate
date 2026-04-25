@@ -166,9 +166,9 @@ async def request_login(body: LoginRequest, db: Session = Depends(get_db)):
 @app.get("/auth/verify", response_model=TokenResponse)
 def verify_magic_link(token: str, db: Session = Depends(get_db)):
     auth_token = db.query(AuthToken).filter(AuthToken.token == token).first()
-    print(auth_token.expires_at, type(auth_token.expires_at), auth_token.expires_at.tzinfo)
     if not auth_token:
         raise HTTPException(status_code=400, detail="Це посилання не є валідним.")
+    print(auth_token.expires_at, type(auth_token.expires_at), auth_token.expires_at.tzinfo)
     if auth_token.used:
         raise HTTPException(status_code=400, detail="Це посилання вже було використано.")
     if auth_token.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
