@@ -16,7 +16,7 @@ export default function Home() {
                 </div>
                 <h1 style={s.title}>ScanRate</h1>
                 <p style={s.subtitle}>Відскануйте та оцініть продукти на території України!</p>
-                <p style={s.wip}>Демонстрація роботи CI/CD</p>
+                <p style={s.wip}>В активній розробці</p>
             </div>
         </div>
     );
