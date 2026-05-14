@@ -65,8 +65,8 @@ def test_approve_nonexistent_review(client, admin_token):
 # -------------------------
 
 def test_get_pending_requests(client, admin_token, db):
-    from models import ProductRequest
-    req = ProductRequest(ean="4820024790099", name="Тест", status="pending")
+    from models import Product
+    req = Product(ean="4820024790099", name="Тест", status="pending")
     db.add(req)
     db.commit()
 
@@ -75,9 +75,9 @@ def test_get_pending_requests(client, admin_token, db):
     assert len(res.json()) == 1
 
 
-def test_approve_request_creates_product(client, admin_token, db):
-    from models import ProductRequest, Product
-    req = ProductRequest(ean="4820024790099", name="Новий продукт", brand="Бренд", status="pending")
+def test_approve_request(client, admin_token, db):
+    from models import Product
+    req = Product(ean="4820024790099", name="Новий продукт", brand="Бренд", status="pending")
     db.add(req)
     db.commit()
 
@@ -87,14 +87,14 @@ def test_approve_request_creates_product(client, admin_token, db):
     )
     assert res.status_code == 200
 
-    product = db.query(Product).filter(Product.ean == "4820024790099").first()
+    product = db.query(Product).filter(Product.ean == "4820024790099", Product.status == "approved").first()
     assert product is not None
     assert product.name == "Новий продукт"
 
 
 def test_approve_request_already_exists(client, admin_token, db, product):
-    from models import ProductRequest
-    req = ProductRequest(ean=product.ean, name=product.name, status="pending")
+    from models import Product
+    req = Product(ean=product.ean, name=product.name, status="pending")
     db.add(req)
     db.commit()
 
@@ -107,8 +107,8 @@ def test_approve_request_already_exists(client, admin_token, db, product):
 
 
 def test_reject_request(client, admin_token, db):
-    from models import ProductRequest
-    req = ProductRequest(ean="4820024790099", name="Тест", status="pending")
+    from models import Product
+    req = Product(ean="4820024790099", name="Тест", status="pending")
     db.add(req)
     db.commit()
 
@@ -119,7 +119,7 @@ def test_reject_request(client, admin_token, db):
     assert res.status_code == 200
 
     db.expire_all()
-    assert db.query(ProductRequest).filter(ProductRequest.id == req.id).first().status == "rejected"
+    assert db.query(Product).filter(Product.id == req.id).first().status == "rejected"
 
 
 # -------------------------

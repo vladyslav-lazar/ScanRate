@@ -21,7 +21,8 @@ services:
     env_file:
       - ./.env
     environment:
-      FRONTEND_URL: https://scanrate.pp.ua
+      FRONTEND_URL: https://${HOST}
+      BACKEND_URL:  https://${HOST}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     depends_on:
       db:
@@ -71,7 +72,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER:        ${GRAFANA_USER}
       GF_SECURITY_ADMIN_PASSWORD:    ${GRAFANA_PASSWORD}
-      GF_SERVER_ROOT_URL:            https://grafana.scanrate.pp.ua
+      GF_SERVER_ROOT_URL:            https://grafana.${HOST}
       GF_SERVER_SERVE_FROM_SUB_PATH: "false"
       GF_USERS_ALLOW_SIGN_UP:        "false"
       GF_AUTH_ANONYMOUS_ENABLED:     "false"

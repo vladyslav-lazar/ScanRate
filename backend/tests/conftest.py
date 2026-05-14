@@ -83,6 +83,7 @@ def product(db):
         ean="4820024790022",
         name="Тестовий продукт",
         brand="Тестовий бренд",
+        status="approved",
     )
     db.add(p)
     db.commit()

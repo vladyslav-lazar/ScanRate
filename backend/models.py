@@ -36,6 +36,8 @@ class Product(Base):
     brand       = Column(String, nullable=True)
     image_url   = Column(String, nullable=True)
     description = Column(String, nullable=True)
+    status = Column(String, default="pending")  # pending | approved | rejected
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     ratings = relationship("Rating", back_populates="product")
 
@@ -64,16 +66,3 @@ class Rating(Base):
     @property
     def product_name(self):
         return self.product.name if self.product else None
-
-
-class ProductRequest(Base):
-    __tablename__ = "product_requests"
-
-    id          = Column(Integer, primary_key=True, autoincrement=True)
-    ean         = Column(String(13), nullable=False, index=True)
-    name        = Column(String, nullable=True)
-    brand       = Column(String, nullable=True)
-    image_url   = Column(String, nullable=True)
-    description = Column(String, nullable=True)
-    status      = Column(String, default="pending")  # pending | approved | rejected
-    created_at  = Column(DateTime(timezone=True), server_default=func.now())
