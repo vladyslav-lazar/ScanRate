@@ -87,6 +87,8 @@ def get_admin_user(user: User = Depends(get_current_user)) -> User:
 # -------------------------
 
 def get_image_url(image_url : str) -> str:
+    if image_url is None:
+        return None
     if image_url.startswith("/uploads"):
         return f"{BACKEND_URL}{image_url}"
     return image_url
@@ -156,7 +158,7 @@ async def request_login(body: LoginRequest, db: Session = Depends(get_db)):
         db.refresh(user)
 
     db.query(AuthToken)\
-      .filter(AuthToken.user_id == user.id, AuthToken.used == False)\
+      .filter(AuthToken.user_id == user.id, not AuthToken.used)\
       .update({"used": True})
     db.commit()
 
