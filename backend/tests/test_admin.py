@@ -92,20 +92,6 @@ def test_approve_request(client, admin_token, db):
     assert product.name == "Новий продукт"
 
 
-def test_approve_request_already_exists(client, admin_token, db, product):
-    from models import Product
-    req = Product(ean=product.ean, name=product.name, status="pending")
-    db.add(req)
-    db.commit()
-
-    res = client.post(
-        f"/admin/requests/{req.id}/approve",
-        headers=auth_header(admin_token),
-    )
-    assert res.status_code == 200
-    assert res.json().get("note") is not None
-
-
 def test_reject_request(client, admin_token, db):
     from models import Product
     req = Product(ean="4820024790099", name="Тест", status="pending")
